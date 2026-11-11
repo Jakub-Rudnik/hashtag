@@ -7,8 +7,9 @@ Działa na Cloudflare: Workers + R2 + D1.
 
 ```sh
 pnpm install
+cp .dev.vars.example .dev.vars   # uzupełnij: ADMIN_PASSWORD, SESSION_SECRET, API_TOKEN
 pnpm db:migrate:local
-pnpm dev                # http://localhost:8787/admin, hasło z .dev.vars (domyślnie: dev)
+pnpm dev                # http://localhost:8787/admin, hasło = ADMIN_PASSWORD z .dev.vars
 ```
 
 Lokalne R2 i D1 lądują w `.wrangler/state/`.
@@ -21,6 +22,7 @@ pnpm exec wrangler d1 create hashtag            # wklej database_id do wrangler.
 pnpm exec wrangler r2 bucket create hashtag-docs
 pnpm exec wrangler secret put ADMIN_PASSWORD
 openssl rand -hex 32 | pnpm exec wrangler secret put SESSION_SECRET
+pnpm exec wrangler secret put API_TOKEN         # wklej token z `openssl rand -hex 32`, zapisz jako HASHTAG_TOKEN
 pnpm db:migrate:remote
 pnpm run deploy
 ```

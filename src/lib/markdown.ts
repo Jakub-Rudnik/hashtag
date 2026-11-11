@@ -45,13 +45,14 @@ const md = new MarkdownIt({
 
 // Anchor ids on headings, so sections can be linked: /p/abc#installation
 md.core.ruler.push('heading_ids', (state) => {
-  const seen = new Map<string, number>()
+  const used = new Set<string>()
   state.tokens.forEach((token, i) => {
     if (token.type !== 'heading_open') return
     const base = slugify(plainText(state.tokens[i + 1])) || 'section'
-    const n = seen.get(base) ?? 0
-    seen.set(base, n + 1)
-    token.attrSet('id', n ? `${base}-${n}` : base)
+    let id = base
+    for (let n = 1; used.has(id); n++) id = `${base}-${n}`
+    used.add(id)
+    token.attrSet('id', id)
   })
 })
 

@@ -18,5 +18,8 @@
     }
   ],
 
+  // Set with `wrangler secret put <NAME>` (production) or in .dev.vars (local).
+  "secrets": { "required": ["ADMIN_PASSWORD", "SESSION_SECRET", "API_TOKEN"] },
+
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hashtag-docs" }]
 }

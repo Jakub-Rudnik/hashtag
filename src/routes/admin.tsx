@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { csrf } from 'hono/csrf'
 import { checkPassword, endSession, requireAdmin, startSession } from '../lib/auth'
 import { listDocs } from '../lib/db'
+import { LIMITS, limitBody } from '../lib/limits'
 import { createDocument, createDocumentFromText, removeDocument, UploadError } from '../lib/documents'
 import { AdminPage, LoginPage } from '../views/pages'
 
@@ -16,7 +17,7 @@ adminRoutes.use('*', async (c, next) => {
 // --- public part: login ---
 adminRoutes.get('/login', (c) => c.html(LoginPage({})))
 
-adminRoutes.post('/login', async (c) => {
+adminRoutes.post('/login', limitBody(LIMITS.login), async (c) => {
   const { password } = await c.req.parseBody()
   if (typeof password !== 'string' || !(await checkPassword(c.env, password))) {
     return c.html(LoginPage({ error: true }), 401)
@@ -40,7 +41,7 @@ adminRoutes.get('/', async (c) => {
   return c.html(AdminPage({ docs, origin: new URL(c.req.url).origin, errors, created }))
 })
 
-adminRoutes.post('/upload', async (c) => {
+adminRoutes.post('/upload', limitBody(LIMITS.upload), async (c) => {
   const body = await c.req.parseBody({ all: true })
   const files = [body.files].flat().filter((f): f is File => f instanceof File && f.size > 0)
 
@@ -57,7 +58,7 @@ adminRoutes.post('/upload', async (c) => {
   return c.redirect(errors.length ? `/admin?${qs}` : '/admin')
 })
 
-adminRoutes.post('/paste', async (c) => {
+adminRoutes.post('/paste', limitBody(LIMITS.paste), async (c) => {
   const { markdown, title } = await c.req.parseBody()
   try {
     const doc = await createDocumentFromText(

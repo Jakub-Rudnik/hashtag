@@ -3,6 +3,7 @@
 import { Hono, type Context } from 'hono'
 import { secretMatches } from '../lib/auth'
 import type { Doc } from '../lib/db'
+import { LIMITS, limitBody } from '../lib/limits'
 import { createDocumentFromText, removeDocument, updateDocumentText, UploadError } from '../lib/documents'
 
 export const apiRoutes = new Hono<{ Bindings: Env }>()
@@ -14,6 +15,8 @@ apiRoutes.use('*', async (c, next) => {
   }
   await next()
 })
+
+apiRoutes.use('*', limitBody(LIMITS.api, true))
 
 apiRoutes.onError((err, c) => {
   if (err instanceof UploadError) return c.json({ error: err.message }, 400)
