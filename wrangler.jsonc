@@ -1,25 +1,42 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "hashtag",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-11-01",
-  "observability": { "enabled": true },
-
-  // Static files (CSS, fonts) served straight from Cloudflare's edge.
-  "assets": { "directory": "./public" },
-
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "hashtag",
-      // Placeholder for local dev. After `wrangler d1 create hashtag`, paste the real id here.
-      "database_id": "00000000-0000-0000-0000-000000000000",
-      "migrations_dir": "migrations"
-    }
-  ],
-
-  // Set with `wrangler secret put <NAME>` (production) or in .dev.vars (local).
-  "secrets": { "required": ["ADMIN_PASSWORD", "SESSION_SECRET", "API_TOKEN"] },
-
-  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hashtag-docs" }]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "hashtag",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-11-01",
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		},
+		"traces": {
+			"enabled": false
+		}
+	},
+	// Static files (CSS, fonts) served straight from Cloudflare's edge.
+	"assets": {
+		"directory": "./public"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "hashtag",
+			// From `wrangler d1 create hashtag`. Local dev ignores it and uses .wrangler/state.
+			"database_id": "ae9cb438-80bb-4a88-95f2-1c297f12a56a",
+			"migrations_dir": "migrations"
+		}
+	],
+	// Set with `wrangler secret put <NAME>` (production) or in .dev.vars (local).
+	"secrets": {
+		"required": [
+			"ADMIN_PASSWORD",
+			"SESSION_SECRET",
+			"API_TOKEN"
+		]
+	},
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "hashtag-docs"
+		}
+	]
 }

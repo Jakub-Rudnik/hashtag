@@ -21,8 +21,9 @@ pnpm exec wrangler login
 pnpm exec wrangler d1 create hashtag            # wklej database_id do wrangler.jsonc
 pnpm exec wrangler r2 bucket create hashtag-docs
 pnpm exec wrangler secret put ADMIN_PASSWORD
-openssl rand -hex 32 | pnpm exec wrangler secret put SESSION_SECRET
-pnpm exec wrangler secret put API_TOKEN         # wklej token z `openssl rand -hex 32`, zapisz jako HASHTAG_TOKEN
+openssl rand -hex 32 | pnpm exec wrangler secret put SESSION_SECRET   # losowy, nikt nie musi go znać
+openssl rand -hex 32                            # token API: skopiuj, bo potrzebny też klientom
+pnpm exec wrangler secret put API_TOKEN         # wklej ten token; u siebie ustaw go jako HASHTAG_TOKEN
 pnpm db:migrate:remote
 pnpm run deploy
 ```
