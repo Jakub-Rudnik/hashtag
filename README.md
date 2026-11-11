@@ -46,6 +46,12 @@ curl -H "Authorization: Bearer $HASHTAG_TOKEN" --data-binary @notatka.md "$HASHT
 W produkcji wygeneruj token (`openssl rand -hex 32`), zapisz go w `~/.bashrc` jako `HASHTAG_TOKEN`
 i wklej przy `pnpm exec wrangler secret put API_TOKEN`.
 
+## Skill dla agentów
+
+[`skills/share-md/SKILL.md`](skills/share-md/SKILL.md) uczy agenta (Claude Code, Codex i inne obsługujące
+format `SKILL.md`) publikowania odpowiedzi jako stron. Skopiuj albo podlinkuj katalog do katalogu skilli agenta,
+np. `~/.claude/skills/share-md`, i ustaw `HASHTAG_URL` oraz `HASHTAG_TOKEN` w profilu powłoki.
+
 ## Struktura
 
 ```
@@ -56,4 +62,5 @@ src/lib/             db (D1), storage (R2), markdown (render), auth (sesja), id
 src/views/           widoki JSX
 public/              CSS/JS jako statyczne pliki
 migrations/          schemat D1
+skills/share-md/     SKILL.md dla agentów (publikowanie przez API)
 ```
