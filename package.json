@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "wrangler types && tsc",
+    "typecheck": "wrangler types && tsc && tsc -p test",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "test": "vitest run"
   },
   "devEngines": {
     "packageManager": {
@@ -24,7 +25,9 @@
     "markdown-it": "^15.0.3"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.7.0",
     "typescript": "^7.0.2",
+    "vitest": "^5.1.0",
     "wrangler": "^4.160.0"
   },
   "private": true,

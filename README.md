@@ -37,6 +37,18 @@ pnpm db:migrate:remote
 pnpm run deploy
 ```
 
+## Tests and CI
+
+```sh
+pnpm test        # Vitest inside the Workers runtime (local D1/R2, no account needed)
+pnpm typecheck
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs typecheck and tests on every pull request and push.
+A push to `main` then applies D1 migrations and deploys. It needs a GitHub environment named `production`
+with two secrets: `CLOUDFLARE_API_TOKEN` (Edit Cloudflare Workers template plus D1 Edit) and
+`CLOUDFLARE_ACCOUNT_ID`. Migrations run before the new code is live, so keep them backward compatible.
+
 ## API
 
 For scripts and tools. Send `Authorization: Bearer <API_TOKEN>`; the request body is raw Markdown.
@@ -72,6 +84,7 @@ src/views/           JSX views
 public/              static files: CSS, JS, favicons
 migrations/          D1 schema
 skills/share-md/     SKILL.md for coding agents
+test/                Vitest tests for security invariants and the main API flow
 ```
 
 ## License
