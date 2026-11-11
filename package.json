@@ -27,5 +27,6 @@
     "typescript": "^7.0.2",
     "wrangler": "^4.160.0"
   },
-  "private": true
+  "private": true,
+  "license": "MIT"
 }
