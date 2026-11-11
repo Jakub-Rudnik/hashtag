@@ -1,5 +1,5 @@
 // Business logic, independent of HTTP. Routes (HTML or a future JSON API) call into this.
-import { deleteDoc, getDoc, insertDoc, type Doc } from './db'
+import { deleteDoc, getDoc, insertDoc, updateDoc, type Doc } from './db'
 import { newId } from './id'
 import { analyze } from './markdown'
 import { deleteMarkdown, getMarkdown, putMarkdown } from './storage'
@@ -22,12 +22,16 @@ export async function createDocument(env: Env, file: File): Promise<Doc> {
   return saveDocument(env, text, file.name, file.name.replace(ALLOWED_EXT, ''))
 }
 
-/** Markdown pasted as text (e.g. from the clipboard). */
-export async function createDocumentFromText(env: Env, text: string, title?: string): Promise<Doc> {
-  if (!text.trim()) throw new UploadError('Wklejony tekst jest pusty')
+function validateText(text: string): void {
+  if (!text.trim()) throw new UploadError('Tekst jest pusty')
   if (new TextEncoder().encode(text).byteLength > MAX_FILE_BYTES) {
-    throw new UploadError('Wklejony tekst jest większy niż 2 MB')
+    throw new UploadError('Tekst jest większy niż 2 MB')
   }
+}
+
+/** Markdown sent as text (clipboard paste, API). */
+export async function createDocumentFromText(env: Env, text: string, title?: string): Promise<Doc> {
+  validateText(text)
   const firstLine = text.trim().split('\n', 1)[0].replace(/^#+\s*/, '').slice(0, 80)
   return saveDocument(env, text, 'wklejony.md', firstLine || 'Bez tytułu', title?.trim() || undefined)
 }
@@ -52,6 +56,27 @@ async function saveDocument(
   // R2 first: a stray object without a DB row is harmless, a row without content is not.
   await putMarkdown(env.BUCKET, doc.id, text)
   await insertDoc(env.DB, doc)
+  return doc
+}
+
+/**
+ * Replace a document's content, keeping its link. Title: the given one if any, else a previous
+ * hand-typed title is kept, else the new Markdown's H1, else the old title.
+ */
+export async function updateDocumentText(env: Env, id: string, text: string, title?: string): Promise<Doc | null> {
+  validateText(text)
+  const old = await getDoc(env.DB, id)
+  if (!old) return null
+  const custom = title?.trim()
+  const doc: Doc = {
+    ...old,
+    title: custom || (old.custom_title ? old.title : (analyze(text).title ?? old.title)),
+    custom_title: custom || old.custom_title ? 1 : 0,
+    size: new TextEncoder().encode(text).byteLength,
+    updated_at: Date.now(),
+  }
+  await putMarkdown(env.BUCKET, id, text)
+  await updateDoc(env.DB, doc)
   return doc
 }
 

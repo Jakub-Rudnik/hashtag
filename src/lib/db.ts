@@ -26,6 +26,16 @@ export async function insertDoc(db: D1Database, doc: Doc): Promise<void> {
     .run()
 }
 
+export async function updateDoc(
+  db: D1Database,
+  doc: Pick<Doc, 'id' | 'title' | 'custom_title' | 'size' | 'updated_at'>,
+): Promise<void> {
+  await db
+    .prepare('UPDATE documents SET title = ?, custom_title = ?, size = ?, updated_at = ? WHERE id = ?')
+    .bind(doc.title, doc.custom_title, doc.size, doc.updated_at, doc.id)
+    .run()
+}
+
 export async function deleteDoc(db: D1Database, id: string): Promise<void> {
   await db.prepare('DELETE FROM documents WHERE id = ?').bind(id).run()
 }

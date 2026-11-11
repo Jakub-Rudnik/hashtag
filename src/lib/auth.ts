@@ -17,10 +17,15 @@ function digestsEqual(a: Uint8Array, b: Uint8Array): boolean {
   return diff === 0
 }
 
-export async function checkPassword(env: Env, password: string): Promise<boolean> {
-  if (!env.ADMIN_PASSWORD) return false // never allow login with an unset password
-  const [a, b] = await Promise.all([sha256(password), sha256(env.ADMIN_PASSWORD)])
+/** Timing-safe secret comparison. An unset/empty expected secret never matches. */
+export async function secretMatches(given: string, expected: string | undefined): Promise<boolean> {
+  if (!expected) return false
+  const [a, b] = await Promise.all([sha256(given), sha256(expected)])
   return digestsEqual(a, b)
+}
+
+export function checkPassword(env: Env, password: string): Promise<boolean> {
+  return secretMatches(password, env.ADMIN_PASSWORD)
 }
 
 export async function startSession(c: Ctx): Promise<void> {

@@ -17,7 +17,7 @@ publicRoutes.get('/:id', async (c) => {
   const { html, title, description } = analyze(found.markdown)
   // A hand-typed title is shown as the heading, unless the Markdown brings its own H1.
   const showTitle = found.doc.custom_title === 1 && !title
-  c.header('Cache-Control', 'public, max-age=60')
+  c.header('Cache-Control', 'no-cache')
   return c.html(DocPage({ doc: found.doc, html, description, showTitle }))
 })
 

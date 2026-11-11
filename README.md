@@ -25,11 +25,29 @@ pnpm db:migrate:remote
 pnpm run deploy
 ```
 
+## API
+
+Dla skryptów i narzędzi (np. skill `share-md` w Claude Code). Nagłówek `Authorization: Bearer <API_TOKEN>`,
+treść żądania to surowy Markdown, opcjonalne `?title=` ustawia tytuł ręczny.
+
+| Metoda | Ścieżka          | Działanie                              |
+|--------|------------------|----------------------------------------|
+| POST   | `/api/docs`      | nowy dokument → `201 {id, title, url}` |
+| PUT    | `/api/docs/:id`  | nowa treść, ten sam link               |
+| DELETE | `/api/docs/:id`  | usuwa → `204`                          |
+
+```sh
+curl -H "Authorization: Bearer $HASHTAG_TOKEN" --data-binary @notatka.md "$HASHTAG_URL/api/docs"
+```
+
+W produkcji wygeneruj token (`openssl rand -hex 32`), zapisz go w `~/.bashrc` jako `HASHTAG_TOKEN`
+i wklej przy `pnpm exec wrangler secret put API_TOKEN`.
+
 ## Struktura
 
 ```
 src/index.ts         routing
-src/routes/          public.tsx (/p/:id, /p/:id/raw), admin.tsx (/admin/*)
+src/routes/          public.tsx (/p/:id, /p/:id/raw), admin.tsx (/admin/*), api.ts (/api/*)
 src/lib/documents.ts logika (upload/odczyt/usuwanie), niezależna od HTTP
 src/lib/             db (D1), storage (R2), markdown (render), auth (sesja), id
 src/views/           widoki JSX
