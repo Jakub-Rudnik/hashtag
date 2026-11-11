@@ -19,6 +19,9 @@ export function Layout({ title, description, noindex = true, scripts = [], child
         <meta property="og:title" content={title} />
         {description && <meta name="description" content={description} />}
         {description && <meta property="og:description" content={description} />}
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="stylesheet" href="/style.css" />
         {scripts.map((src) => (
           <script src={src} defer />
