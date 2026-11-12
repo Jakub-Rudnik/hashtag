@@ -64,7 +64,20 @@ An optional `?title=` sets a custom title, shown as the page heading when the do
 curl -H "Authorization: Bearer $HASHTAG_TOKEN" --data-binary @notes.md "$HASHTAG_URL/api/docs"
 ```
 
-Errors: `401` wrong token, `400` empty document, `413` larger than 2 MB, `404` unknown id.
+### Images
+
+Send `multipart/form-data` instead: a `markdown` part plus one `files` part per image. Images are matched
+by file name, so `![](./chart.png)` or `![](/tmp/out/chart.png)` shows the uploaded `chart.png`; the stored
+Markdown is not rewritten. PNG, JPEG, GIF, WebP and AVIF only (checked by content, SVG is rejected),
+10 MB per image, 30 MB per request. Images are served content-addressed from `/img/<sha256>.<ext>`.
+On `PUT`, previously uploaded images stay attached. The admin upload accepts `.md` files together with
+their images in the same way.
+
+```sh
+curl -H "Authorization: Bearer $HASHTAG_TOKEN" -F markdown=@notes.md -F files=@chart.png "$HASHTAG_URL/api/docs"
+```
+
+Errors: `401` wrong token, `400` empty document or invalid image, `413` too large, `404` unknown id.
 
 ## Agent skill
 
@@ -77,9 +90,9 @@ then export `HASHTAG_URL` and `HASHTAG_TOKEN` in your shell profile.
 
 ```
 src/index.ts         routing
-src/routes/          public.tsx (/p/:id, /p/:id/raw), admin.tsx (/admin/*), api.ts (/api/*)
+src/routes/          public.tsx (/p/:id, /p/:id/raw), admin.tsx (/admin/*), api.ts (/api/*), images.ts (/img/*)
 src/lib/documents.ts business logic (upload/read/update/delete), independent of HTTP
-src/lib/             db (D1), storage (R2), markdown (rendering), auth (session), limits, id
+src/lib/             db (D1), storage (R2), images, markdown (rendering), auth (session), limits, id
 src/views/           JSX views
 public/              static files: CSS, JS, favicons
 migrations/          D1 schema

@@ -18,6 +18,7 @@ import typescript from 'highlight.js/lib/languages/typescript'
 import xml from 'highlight.js/lib/languages/xml'
 import yaml from 'highlight.js/lib/languages/yaml'
 import MarkdownIt, { type Token } from 'markdown-it'
+import { baseName, IMAGE_KEY } from './images'
 
 const languages = {
   bash, c, cpp, csharp, css, diff, dockerfile, go, java, javascript,
@@ -66,6 +67,30 @@ md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
   return defaultLinkOpen(tokens, idx, options, env, self)
 }
 
+type RenderEnv = { images?: Map<string, string> }
+
+// Local image paths (./chart.png, /tmp/x/chart.png) resolve by file name to the document's uploaded images.
+const defaultImage = md.renderer.rules.image!
+md.renderer.rules.image = (tokens, idx, options, env, self) => {
+  const token = tokens[idx]
+  const key = resolveImage(String(token.attrGet('src') ?? ''), (env as RenderEnv | undefined)?.images)
+  if (key) token.attrSet('src', `/img/${key}`)
+  token.attrSet('loading', 'lazy')
+  return defaultImage(tokens, idx, options, env, self)
+}
+
+function resolveImage(src: string, images?: Map<string, string>): string | null {
+  // Leave real URLs (https:, data:, //host) and images already hosted here (/img/<sha256>.<ext>) alone.
+  const hosted = src.startsWith('/img/') && IMAGE_KEY.test(src.slice('/img/'.length))
+  if (!images?.size || /^([a-z][a-z0-9+.-]*:|\/\/)/i.test(src) || hosted) return null
+  const path = src.split(/[?#]/)[0]
+  let decoded = path
+  try {
+    decoded = decodeURIComponent(path)
+  } catch {}
+  return images.get(baseName(decoded)) ?? null
+}
+
 function plainText(inline: Token | undefined): string {
   return (inline?.children ?? [])
     .filter((t) => t.type === 'text' || t.type === 'code_inline')
@@ -85,9 +110,12 @@ function slugify(s: string): string {
 
 export type Rendered = { html: string; title: string | null; description: string | null }
 
-/** Parse once; returns HTML plus metadata (first H1, first paragraph) for <title> and link previews. */
-export function analyze(source: string): Rendered {
-  const env = {}
+/**
+ * Parse once; returns HTML plus metadata (first H1, first paragraph) for <title> and link previews.
+ * `images` maps file names to uploaded image keys.
+ */
+export function analyze(source: string, images?: Map<string, string>): Rendered {
+  const env: RenderEnv = { images }
   const tokens = md.parse(source, env)
   let title: string | null = null
   let description: string | null = null

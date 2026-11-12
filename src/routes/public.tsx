@@ -14,7 +14,7 @@ publicRoutes.use('*', async (c, next) => {
 publicRoutes.get('/:id', async (c) => {
   const found = await loadDocument(c.env, c.req.param('id'))
   if (!found) return c.html(NotFoundPage(), 404)
-  const { html, title, description } = analyze(found.markdown)
+  const { html, title, description } = analyze(found.markdown, found.images)
   // A hand-typed title is shown as the heading, unless the Markdown brings its own H1.
   const showTitle = found.doc.custom_title === 1 && !title
   c.header('Cache-Control', 'no-cache')

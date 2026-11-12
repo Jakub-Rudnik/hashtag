@@ -4,6 +4,7 @@ import { checkPassword, endSession, requireAdmin, startSession } from '../lib/au
 import { listDocs } from '../lib/db'
 import { LIMITS, limitBody } from '../lib/limits'
 import { createDocument, createDocumentFromText, removeDocument, UploadError } from '../lib/documents'
+import { IMAGE_EXT, storeImages } from '../lib/images'
 import { AdminPage, LoginPage } from '../views/pages'
 
 export const adminRoutes = new Hono<{ Bindings: Env }>()
@@ -44,15 +45,28 @@ adminRoutes.get('/', async (c) => {
 adminRoutes.post('/upload', limitBody(LIMITS.upload), async (c) => {
   const body = await c.req.parseBody({ all: true })
   const files = [body.files].flat().filter((f): f is File => f instanceof File && f.size > 0)
+  const imageFiles = files.filter((f) => IMAGE_EXT.test(f.name))
+  const docFiles = files.filter((f) => !IMAGE_EXT.test(f.name))
+
+  if (!docFiles.length) {
+    return c.redirect(`/admin?${new URLSearchParams({ error: 'Dodaj też plik .md, w którym są te obrazki' })}`)
+  }
 
   const errors: string[] = []
-  for (const file of files) {
-    try {
-      await createDocument(c.env, file)
-    } catch (e) {
-      if (!(e instanceof UploadError)) throw e
-      errors.push(e.message)
+  try {
+    // Images uploaded together with Markdown files are available to all of them.
+    const images = await storeImages(c.env.BUCKET, imageFiles)
+    for (const file of docFiles) {
+      try {
+        await createDocument(c.env, file, images)
+      } catch (e) {
+        if (!(e instanceof UploadError)) throw e
+        errors.push(e.message)
+      }
     }
+  } catch (e) {
+    if (!(e instanceof UploadError)) throw e
+    errors.push(e.message)
   }
   const qs = new URLSearchParams(errors.map((e) => ['error', e]))
   return c.redirect(errors.length ? `/admin?${qs}` : '/admin')
