@@ -67,20 +67,75 @@ button:hover { border-color: var(--muted); }
 button.danger { color: var(--danger); }
 button.link { border: 0; background: none; color: var(--muted); padding: 0; }
 
+.icon { display: block; flex-shrink: 0; }
+.icon-swap .i-check, .icon-swap.copied .i-copy { display: none; }
+.icon-swap.copied .i-check { display: block; color: var(--hl-add); }
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+}
+.icon-btn:hover { color: var(--fg); border-color: var(--muted); }
+.icon-btn.danger { color: var(--danger); }
+
 /* ---------- document page ---------- */
 
 .doc { max-width: 46rem; margin: 0 auto; padding: 3rem 1rem 4rem; }
 
-.doc-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 4rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+/* Info menu, top right: author, dates, PDF export. */
+.doc-menu { position: fixed; top: 1rem; right: 1rem; z-index: 10; font-size: 0.875rem; line-height: 1.4; }
+.doc-menu summary {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
   color: var(--muted);
-  font-size: 0.85rem;
+  cursor: pointer;
 }
-.doc-footer a { color: inherit; }
+.doc-menu summary::-webkit-details-marker { display: none; }
+.doc-menu summary:hover, .doc-menu[open] summary { color: var(--fg); border-color: var(--muted); }
+.menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 15rem;
+  white-space: nowrap;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 0.35rem 0; }
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+}
+/* Trim the font's ascent/descent so the text centers on the icon by its cap height. */
+.menu-row > span { text-box: trim-both cap alphabetic; }
+button.menu-row, a.menu-row { color: var(--fg); cursor: pointer; }
+button.menu-row:hover, a.menu-row:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
 
 .markdown { overflow-wrap: break-word; }
 .markdown > :first-child { margin-top: 0; }
@@ -170,6 +225,8 @@ button.link { border: 0; background: none; color: var(--muted); padding: 0; }
 .paste textarea { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.85rem; resize: vertical; }
 .paste textarea:focus, .paste input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .paste-row { display: flex; gap: 0.75rem; }
+.paste-row input { flex: 2; }
+.paste-row input.author { flex: 1; }
 
 .created {
   display: flex;
@@ -216,4 +273,38 @@ button.link { border: 0; background: none; color: var(--muted); padding: 0; }
 @media (max-width: 600px) {
   .upload, .paste-row, .created { flex-direction: column; align-items: stretch; }
   .doc-list li { flex-direction: column; align-items: stretch; }
+}
+
+/* ---------- print / Save as PDF ---------- */
+
+/* No page margin leaves the browser no room for its own header and footer (title, URL, date). */
+@page { size: A4; margin: 0; }
+
+@media print {
+  :root {
+    --bg: #fff;
+    --fg: #1f2328;
+    --muted: #656d76;
+    --border: #d8dee4;
+    --surface: #f6f8fa;
+    --accent: #0969da;
+    --code-bg: #f6f8fa;
+    --hl-keyword: #cf222e;
+    --hl-string: #0a3069;
+    --hl-number: #0550ae;
+    --hl-title: #8250df;
+    --hl-comment: #6e7781;
+    --hl-attr: #953800;
+    --hl-add: #116329;
+    --hl-del: #82071e;
+    color-scheme: light;
+  }
+  body { font-size: 11pt; line-height: 1.55; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  /* The page margin lives here instead; `clone` repeats the padding on every printed page. */
+  .doc { max-width: none; margin: 0; padding: 16mm 18mm; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+  .doc-menu { display: none; }
+  .markdown h1, .markdown h2, .markdown h3, .markdown h4 { break-after: avoid; }
+  .markdown pre { white-space: pre-wrap; overflow: visible; }
+  .markdown pre, .markdown img, .markdown blockquote, .markdown tr { break-inside: avoid; }
+  .markdown table { display: table; overflow: visible; }
 }

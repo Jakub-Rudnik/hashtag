@@ -43,6 +43,7 @@ never print it, and never pass it as a command-line argument.
    printf 'Authorization: Bearer %s\n' "$HASHTAG_TOKEN" |
      curl -sS --fail-with-body -H @- \
        -F markdown=@page.md \
+       -F "author=Claude Code" \
        -F files=@/path/to/chart.png \
        "$HASHTAG_URL/api/docs"
    ```
@@ -50,6 +51,8 @@ never print it, and never pass it as a command-line argument.
    The server matches images by file name, so `![](/path/to/chart.png)` and `![](chart.png)` both
    resolve to the uploaded `chart.png`. Leave the paths in the Markdown as they are.
 
+   - `author` is the name of the agent publishing the page (`Claude Code`, `Codex`, ...), shown on the
+     page. Use a person's name instead only when asked to.
    - With an explicit title (only when one was given): add `-F "title=The Title"`.
    - New content under the same link: add `-X PUT` and use `"$HASHTAG_URL/api/docs/<id>"`.
      Images uploaded earlier stay attached; send only new or changed ones.

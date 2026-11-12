@@ -1,12 +1,18 @@
 // JSON API for scripts and tools (e.g. the Claude Code skill). Auth: `Authorization: Bearer <API_TOKEN>`.
 // Body is raw Markdown, or multipart with a `markdown` part and image `files` (referenced by file name).
-// Optional `?title=` sets a hand-typed title.
+// Optional `?title=` sets a hand-typed title, `?author=` the author (multipart: `title`, `author` parts).
 import { Hono, type Context } from 'hono'
 import { secretMatches } from '../lib/auth'
 import type { Doc } from '../lib/db'
-import { storeImages, type ImageRef } from '../lib/images'
+import { storeImages } from '../lib/images'
 import { LIMITS, limitBody } from '../lib/limits'
-import { createDocumentFromText, removeDocument, updateDocumentText, UploadError } from '../lib/documents'
+import {
+  createDocumentFromText,
+  removeDocument,
+  updateDocumentText,
+  UploadError,
+  type DocOptions,
+} from '../lib/documents'
 
 export const apiRoutes = new Hono<{ Bindings: Env }>()
 
@@ -24,19 +30,25 @@ apiRoutes.use('*', (c, next) =>
   limitBody(isMultipart(c) ? LIMITS.apiMultipart : LIMITS.api, true)(c, next),
 )
 
-/** Markdown, optional title and stored images from either request shape. */
-async function readInput(c: Context<{ Bindings: Env }>): Promise<{ text: string; title?: string; images: ImageRef[] }> {
+/** Markdown plus title, author and stored images from either request shape. */
+async function readInput(c: Context<{ Bindings: Env }>): Promise<{ text: string; opts: DocOptions }> {
   const title = c.req.query('title')
-  if (!isMultipart(c)) return { text: await c.req.text(), title, images: [] }
+  const author = c.req.query('author')
+  if (!isMultipart(c)) return { text: await c.req.text(), opts: { title, author } }
 
   const body = await c.req.parseBody({ all: true })
-  const markdown = [body.markdown].flat()[0]
+  const field = (name: string) => [body[name]].flat()[0]
+  const markdown = field('markdown')
   const text = markdown instanceof File ? await markdown.text() : typeof markdown === 'string' ? markdown : ''
+  const str = (v: unknown, fallback?: string) => (typeof v === 'string' ? v : fallback)
   const files = [body.files].flat().filter((f): f is File => f instanceof File && f.size > 0)
   return {
     text,
-    title: typeof body.title === 'string' ? body.title : title,
-    images: await storeImages(c.env.BUCKET, files),
+    opts: {
+      title: str(field('title'), title),
+      author: str(field('author'), author),
+      images: await storeImages(c.env.BUCKET, files),
+    },
   }
 }
 
@@ -52,14 +64,14 @@ const present = (c: Context, doc: Doc) => ({
 })
 
 apiRoutes.post('/docs', async (c) => {
-  const { text, title, images } = await readInput(c)
-  const doc = await createDocumentFromText(c.env, text, title, images)
+  const { text, opts } = await readInput(c)
+  const doc = await createDocumentFromText(c.env, text, opts)
   return c.json(present(c, doc), 201)
 })
 
 apiRoutes.put('/docs/:id', async (c) => {
-  const { text, title, images } = await readInput(c)
-  const doc = await updateDocumentText(c.env, c.req.param('id'), text, title, images)
+  const { text, opts } = await readInput(c)
+  const doc = await updateDocumentText(c.env, c.req.param('id'), text, opts)
   return doc ? c.json(present(c, doc)) : c.json({ error: 'Not found' }, 404)
 })
 

@@ -39,7 +39,9 @@ adminRoutes.get('/', async (c) => {
   const docs = await listDocs(c.env.DB)
   const errors = c.req.queries('error') ?? []
   const created = c.req.query('created')
-  return c.html(AdminPage({ docs, origin: new URL(c.req.url).origin, errors, created }))
+  return c.html(
+    AdminPage({ docs, origin: new URL(c.req.url).origin, errors, created, defaultAuthor: c.env.AUTHOR_NAME }),
+  )
 })
 
 adminRoutes.post('/upload', limitBody(LIMITS.upload), async (c) => {
@@ -58,7 +60,7 @@ adminRoutes.post('/upload', limitBody(LIMITS.upload), async (c) => {
     const images = await storeImages(c.env.BUCKET, imageFiles)
     for (const file of docFiles) {
       try {
-        await createDocument(c.env, file, images)
+        await createDocument(c.env, file, { images })
       } catch (e) {
         if (!(e instanceof UploadError)) throw e
         errors.push(e.message)
@@ -73,12 +75,13 @@ adminRoutes.post('/upload', limitBody(LIMITS.upload), async (c) => {
 })
 
 adminRoutes.post('/paste', limitBody(LIMITS.paste), async (c) => {
-  const { markdown, title } = await c.req.parseBody()
+  const { markdown, title, author } = await c.req.parseBody()
+  const str = (v: unknown) => (typeof v === 'string' ? v : undefined)
   try {
     const doc = await createDocumentFromText(
       c.env,
       typeof markdown === 'string' ? markdown.replace(/\r\n/g, '\n') : '',
-      typeof title === 'string' ? title : undefined,
+      { title: str(title), author: str(author) },
     )
     return c.redirect(`/admin?created=${doc.id}`)
   } catch (e) {
