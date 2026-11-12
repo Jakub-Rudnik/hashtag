@@ -25,6 +25,10 @@
 			"migrations_dir": "migrations"
 		}
 	],
+	"vars": {
+		// Default author for documents that don't name one (admin panel, API without `author`).
+		"AUTHOR_NAME": "Jakub Rudnik"
+	},
 	// Set with `wrangler secret put <NAME>` (production) or in .dev.vars (local).
 	"secrets": {
 		"required": [

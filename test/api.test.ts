@@ -11,8 +11,10 @@ describe('API', () => {
     const doc = await createDoc('# Hello\n\nv1')
     expect(await (await request(`/p/${doc.id}`)).text()).toContain('<p>v1</p>')
 
-    expect((await api('PUT', `/docs/${doc.id}`, '# Hello\n\nv2')).status).toBe(200)
-    expect(await (await request(`/p/${doc.id}`)).text()).toContain('<p>v2</p>')
+    expect((await api('PUT', `/docs/${doc.id}?author=Codex`, '# Hello\n\nv2')).status).toBe(200)
+    const page = await (await request(`/p/${doc.id}`)).text()
+    expect(page).toContain('<p>v2</p>')
+    expect(page).toContain('<span>Codex</span>')
 
     expect((await api('DELETE', `/docs/${doc.id}`)).status).toBe(204)
     expect((await request(`/p/${doc.id}`)).status).toBe(404)

@@ -4,6 +4,7 @@ export type Doc = {
   id: string
   title: string
   custom_title: 0 | 1 // 1 = typed in by hand
+  author: string | null
   filename: string
   size: number
   created_at: number
@@ -25,9 +26,9 @@ export async function insertDoc(db: D1Database, doc: Doc, images: ImageRef[] = [
   await db.batch([
     db
       .prepare(
-        'INSERT INTO documents (id, title, custom_title, filename, size, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO documents (id, title, custom_title, author, filename, size, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       )
-      .bind(doc.id, doc.title, doc.custom_title, doc.filename, doc.size, doc.created_at, doc.updated_at),
+      .bind(doc.id, doc.title, doc.custom_title, doc.author, doc.filename, doc.size, doc.created_at, doc.updated_at),
     ...imageBindings(db, doc.id, images),
   ])
 }
@@ -35,13 +36,13 @@ export async function insertDoc(db: D1Database, doc: Doc, images: ImageRef[] = [
 /** Images sent with an update are added; a re-uploaded file name points to the new image. */
 export async function updateDoc(
   db: D1Database,
-  doc: Pick<Doc, 'id' | 'title' | 'custom_title' | 'size' | 'updated_at'>,
+  doc: Pick<Doc, 'id' | 'title' | 'custom_title' | 'author' | 'size' | 'updated_at'>,
   images: ImageRef[] = [],
 ): Promise<void> {
   await db.batch([
     db
-      .prepare('UPDATE documents SET title = ?, custom_title = ?, size = ?, updated_at = ? WHERE id = ?')
-      .bind(doc.title, doc.custom_title, doc.size, doc.updated_at, doc.id),
+      .prepare('UPDATE documents SET title = ?, custom_title = ?, author = ?, size = ?, updated_at = ? WHERE id = ?')
+      .bind(doc.title, doc.custom_title, doc.author, doc.size, doc.updated_at, doc.id),
     ...imageBindings(db, doc.id, images),
   ])
 }

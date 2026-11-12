@@ -3,6 +3,12 @@ document.addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-copy]')
   if (!btn) return
   await navigator.clipboard.writeText(btn.dataset.copy)
+  if (btn.classList.contains('icon-swap')) {
+    // Icon button: show a check mark for a moment.
+    btn.classList.add('copied')
+    setTimeout(() => btn.classList.remove('copied'), 1500)
+    return
+  }
   const label = btn.textContent
   btn.textContent = 'Skopiowano ✓'
   setTimeout(() => (btn.textContent = label), 1500)

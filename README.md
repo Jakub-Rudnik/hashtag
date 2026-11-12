@@ -8,6 +8,7 @@ and fits comfortably in the free tier.
 - Upload `.md` files (drag & drop, several at once) or paste Markdown from the clipboard
 - Unlisted links (`/p/<random id>`), kept out of search engines
 - Syntax highlighting, tables, heading anchors, light/dark theme, link previews (Open Graph)
+- Info menu on every page: author, created and modified dates, export to PDF (print styles, A4)
 - Raw HTML in Markdown is escaped, so uploaded documents cannot run scripts
 - Password-protected admin panel
 - Token-authenticated JSON API, plus a `SKILL.md` that lets coding agents publish pages
@@ -53,6 +54,8 @@ with two secrets: `CLOUDFLARE_API_TOKEN` (Edit Cloudflare Workers template plus 
 
 For scripts and tools. Send `Authorization: Bearer <API_TOKEN>`; the request body is raw Markdown.
 An optional `?title=` sets a custom title, shown as the page heading when the document has no `# H1`.
+An optional `?author=` names the author (a person or an agent); without it the document gets `AUTHOR_NAME`
+from `wrangler.jsonc`, and on `PUT` it keeps the previous author.
 
 | Method | Path            | Action                                         |
 |--------|-----------------|------------------------------------------------|
@@ -66,7 +69,8 @@ curl -H "Authorization: Bearer $HASHTAG_TOKEN" --data-binary @notes.md "$HASHTAG
 
 ### Images
 
-Send `multipart/form-data` instead: a `markdown` part plus one `files` part per image. Images are matched
+Send `multipart/form-data` instead: a `markdown` part plus one `files` part per image (`title` and `author`
+can be parts too). Images are matched
 by file name, so `![](./chart.png)` or `![](/tmp/out/chart.png)` shows the uploaded `chart.png`; the stored
 Markdown is not rewritten. PNG, JPEG, GIF, WebP and AVIF only (checked by content, SVG is rejected),
 10 MB per image, 30 MB per request. Images are served content-addressed from `/img/<sha256>.<ext>`.
