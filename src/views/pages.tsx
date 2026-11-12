@@ -61,9 +61,16 @@ export function AdminPage(props: { docs: Doc[]; origin: string; errors: string[]
 
         <form class="upload" method="post" action="/admin/upload" enctype="multipart/form-data">
           <label class="dropzone">
-            <input type="file" name="files" accept=".md,.markdown,.txt" multiple required />
+            <input
+              type="file"
+              name="files"
+              accept=".md,.markdown,.txt,.png,.jpg,.jpeg,.gif,.webp,.avif"
+              multiple
+              required
+            />
             <span>
-              Upuść pliki <code>.md</code> albo kliknij, żeby wybrać (max {MAX_FILE_BYTES / 1024 / 1024} MB)
+              Upuść pliki <code>.md</code> (razem z obrazkami, których używają) albo kliknij, żeby wybrać (max{' '}
+              {MAX_FILE_BYTES / 1024 / 1024} MB na plik .md)
             </span>
           </label>
           <button>Wgraj</button>

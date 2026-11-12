@@ -1,8 +1,10 @@
 // JSON API for scripts and tools (e.g. the Claude Code skill). Auth: `Authorization: Bearer <API_TOKEN>`.
-// Body is raw Markdown; optional `?title=` sets a hand-typed title.
+// Body is raw Markdown, or multipart with a `markdown` part and image `files` (referenced by file name).
+// Optional `?title=` sets a hand-typed title.
 import { Hono, type Context } from 'hono'
 import { secretMatches } from '../lib/auth'
 import type { Doc } from '../lib/db'
+import { storeImages, type ImageRef } from '../lib/images'
 import { LIMITS, limitBody } from '../lib/limits'
 import { createDocumentFromText, removeDocument, updateDocumentText, UploadError } from '../lib/documents'
 
@@ -16,7 +18,27 @@ apiRoutes.use('*', async (c, next) => {
   await next()
 })
 
-apiRoutes.use('*', limitBody(LIMITS.api, true))
+const isMultipart = (c: Context) => c.req.header('Content-Type')?.startsWith('multipart/form-data') ?? false
+
+apiRoutes.use('*', (c, next) =>
+  limitBody(isMultipart(c) ? LIMITS.apiMultipart : LIMITS.api, true)(c, next),
+)
+
+/** Markdown, optional title and stored images from either request shape. */
+async function readInput(c: Context<{ Bindings: Env }>): Promise<{ text: string; title?: string; images: ImageRef[] }> {
+  const title = c.req.query('title')
+  if (!isMultipart(c)) return { text: await c.req.text(), title, images: [] }
+
+  const body = await c.req.parseBody({ all: true })
+  const markdown = [body.markdown].flat()[0]
+  const text = markdown instanceof File ? await markdown.text() : typeof markdown === 'string' ? markdown : ''
+  const files = [body.files].flat().filter((f): f is File => f instanceof File && f.size > 0)
+  return {
+    text,
+    title: typeof body.title === 'string' ? body.title : title,
+    images: await storeImages(c.env.BUCKET, files),
+  }
+}
 
 apiRoutes.onError((err, c) => {
   if (err instanceof UploadError) return c.json({ error: err.message }, 400)
@@ -30,12 +52,14 @@ const present = (c: Context, doc: Doc) => ({
 })
 
 apiRoutes.post('/docs', async (c) => {
-  const doc = await createDocumentFromText(c.env, await c.req.text(), c.req.query('title'))
+  const { text, title, images } = await readInput(c)
+  const doc = await createDocumentFromText(c.env, text, title, images)
   return c.json(present(c, doc), 201)
 })
 
 apiRoutes.put('/docs/:id', async (c) => {
-  const doc = await updateDocumentText(c.env, c.req.param('id'), await c.req.text(), c.req.query('title'))
+  const { text, title, images } = await readInput(c)
+  const doc = await updateDocumentText(c.env, c.req.param('id'), text, title, images)
   return doc ? c.json(present(c, doc)) : c.json({ error: 'Not found' }, 404)
 })
 
